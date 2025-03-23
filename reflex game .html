@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Reflex Rush</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        #start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+        }
+        .start-btn {
+            padding: 20px 40px;
+            font-size: 24px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 255, 0, 0.8);
+            animation: glow 1.5s infinite alternate;
+        }
+        #single-player { background: linear-gradient(45deg, #0f0, #9f0); }
+        #with-dares { background: linear-gradient(45deg, #ff0, #f90); }
+        #without-dares { background: linear-gradient(45deg, #0ff, #09f); }
+        #signal {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            background: #333;
+            text-shadow: 0 0 5px #fff;
+            transition: all 0.3s;
+        }
+        #signal.go { background: #0f0; animation: pulse 0.4s infinite; }
+        #signal.fake { background: #ff0; }
+        .player-btn {
+            flex: 1;
+            width: 100%;
+            padding: 50px;
+            font-size: 30px;
+            border: none;
+            color: #fff;
+            opacity: 0.6;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .player-btn.active { opacity: 1; }
+        .player-btn:active { transform: scale(0.95); }
+        #player1 { background: #00f; }
+        #player2 { background: #f00; }
+        #result {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 10px;
+            display: none;
+            box-shadow: 0 0 15px #fff;
+            max-width: 90%;
+        }
+        #score {
+            position: absolute;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            padding: 5px 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+        }
+        .dare { font-size: 20px; color: #ff0; margin-top: 10px; }
+        @keyframes pulse { 50% { transform: scale(1.1); } }
+        @keyframes glow { 100% { box-shadow: 0 0 20px rgba(255, 255, 0, 0.8); } }
+        @keyframes confetti {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <button id="single-player" class="start-btn">Single Player</button>
+        <button id="with-dares" class="start-btn">With Friend (Dares)</button>
+        <button id="without-dares" class="start-btn">With Friend (No Dares)</button>
+    </div>
+    <div id="signal">Get Ready...</div>
+    <button id="player1" class="player-btn" disabled>Player 1</button>
+    <button id="player2" class="player-btn" disabled>Player 2</button>
+    <div id="result"></div>
+    <div id="score">P1: 0 | P2: 0 | Best: -</div>
+
+    <script>
+        const startScreen = document.getElementById('start-screen');
+        const singlePlayerBtn = document.getElementById('single-player');
+        const withDaresBtn = document.getElementById('with-dares');
+        const withoutDaresBtn = document.getElementById('without-dares');
+        const signal = document.getElementById('signal');
+        const player1Btn = document.getElementById('player1');
+        const player2Btn = document.getElementById('player2');
+        const resultDiv = document.getElementById('result');
+        const scoreDiv = document.getElementById('score');
+        let startTime, player1Time, player2Time, gameActive = false, mode = '', bestTime = null;
+        let scores = { p1: 0, p2: 0 };
+
+        const dares = [
+            "Do 10 jumping jacks!",
+            "Sing a song out loud!",
+            "Make a silly face for 10 seconds!",
+            "Dance like nobody’s watching!",
+            "Say 'I’m a slowpoke' 3 times!",
+            "Hop on one foot for 5 seconds!",
+            "Give the winner a compliment!",
+            "Bark like a dog twice!",
+            "Spin around 3 times!",
+            "Tell a bad joke!"
+        ];
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(freq, duration) {
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function updateScore() {
+            scoreDiv.textContent = `P1: ${scores.p1} | P2: ${scores.p2} | Best: ${bestTime ? bestTime + 'ms' : '-'}`;
+        }
+
+        function confettiBurst() {
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                confetti.style.animation = `confetti ${1 + Math.random()}s linear`;
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 2000);
+            }
+        }
+
+        function getRandomDare() {
+            return dares[Math.floor(Math.random() * dares.length)];
+        }
+
+        function handleStart(selectedMode) {
+            return function(e) {
+                e.preventDefault();
+                mode = selectedMode;
+                startScreen.style.display = 'none';
+                player1Btn.disabled = true;
+                player2Btn.disabled = true;
+                player1Btn.classList.remove('active');
+                player2Btn.classList.remove('active');
+                resultDiv.style.display = 'none';
+                if (mode === 'single') {
+                    player2Btn.style.display = 'none';
+                    player1Btn.textContent = 'Tap!';
+                } else {
+                    player2Btn.style.display = 'block';
+                    player1Btn.textContent = 'Player 1';
+                }
+                countdown(3);
+            };
+        }
+
+        singlePlayerBtn.addEventListener('touchstart', handleStart('single'));
+        singlePlayerBtn.addEventListener('click', handleStart('single'));
+        withDaresBtn.addEventListener('touchstart', handleStart('with-dares'));
+        withDaresBtn.addEventListener('click', handleStart('with-dares'));
+        withoutDaresBtn.addEventListener('touchstart', handleStart('without-dares'));
+        withoutDaresBtn.addEventListener('click', handleStart('without-dares'));
+
+        function countdown(seconds) {
+            let count = seconds;
+            signal.textContent = count;
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    signal.textContent = count;
+                    playSound(400, 0.1);
+                    if ('vibrate' in navigator) navigator.vibrate(100);
+                } else {
+                    clearInterval(interval);
+                    startGame();
+                }
+            }, 1000);
+        }
+
+        function startGame() {
+            const delay = Math.random() * 4000 + 1000;
+            signal.textContent = 'Wait...';
+            if (Math.random() > 0.7) {
+                setTimeout(() => {
+                    signal.textContent = 'Not Yet!';
+                    signal.classList.add('fake');
+                    setTimeout(() => signal.classList.remove('fake'), 300);
+                }, delay / 2);
+            }
+            setTimeout(() => {
+                signal.textContent = 'GO!';
+                signal.classList.add('go');
+                playSound(800, 0.2);
+                if ('vibrate' in navigator) navigator.vibrate(500);
+                startTime = Date.now();
+                gameActive = true;
+                player1Btn.disabled = false;
+                player1Btn.classList.add('active');
+                if (mode !== 'single') {
+                    player2Btn.disabled = false;
+                    player2Btn.classList.add('active');
+                }
+            }, delay);
+        }
+
+        function handlePlayer1(e) {
+            e.preventDefault();
+            if (gameActive && !player1Time) {
+                player1Time = Date.now() - startTime;
+                if (mode === 'single') checkSinglePlayer();
+                else checkWinner();
+            }
+        }
+
+        function handlePlayer2(e) {
+            e.preventDefault();
+            if (gameActive && !player2Time) {
+                player2Time = Date.now() - startTime;
+                checkWinner();
+            }
+        }
+
+        player1Btn.addEventListener('touchstart', handlePlayer1);
+        player1Btn.addEventListener('click', handlePlayer1);
+        player2Btn.addEventListener('touchstart', handlePlayer2);
+        player2Btn.addEventListener('click', handlePlayer2);
+
+        function checkSinglePlayer() {
+            gameActive = false;
+            signal.classList.remove('go');
+            signal.textContent = 'Done!';
+            if (!bestTime || player1Time < bestTime) bestTime = player1Time;
+            updateScore();
+            resultDiv.innerHTML = `Your Time: ${player1Time}ms<br>Best: ${bestTime}ms`;
+            resultDiv.style.display = 'block';
+            playSound(1000, 0.3);
+            confettiBurst();
+            if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+            setTimeout(() => startScreen.style.display = 'flex', 2500);
+            resetGame();
+        }
+
+        function checkWinner() {
+            if (player1Time && player2Time) {
+                gameActive = false;
+                signal.classList.remove('go');
+                signal.textContent = 'Done!';
+                const winner = player1Time < player2Time ? 'Player 1' : 'Player 2';
+                const loser = winner === 'Player 1' ? 'Player 2' : 'Player 1';
+                if (winner === 'Player 1') scores.p1++; else scores.p2++;
+                updateScore();
+                let resultText = `${winner} wins!<br>P1: ${player1Time}ms | P2: ${player2Time}ms`;
+                if (mode === 'with-dares') {
+                    const dare = getRandomDare();
+                    resultText += `<br><span class="dare">${loser}’s Dare: ${dare}</span>`;
+                }
+                resultDiv.innerHTML = resultText;
+                resultDiv.style.display = 'block';
+                playSound(winner === 'Player 1' ? 1000 : 1200, 0.3);
+                confettiBurst();
+                if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+                setTimeout(() => startScreen.style.display = 'flex', mode === 'with-dares' ? 3000 : 2500);
+                resetGame();
+            }
+        }
+
+        function resetGame() {
+            player1Time = null;
+            player2Time = null;
+        }
+    </script>
+</body>
+</html>
