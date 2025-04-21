@@ -2,220 +2,372 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>2D Zombie Shooter</title>
     <style>
         body {
             margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 0;
+            width: 100vw;
             height: 100vh;
-            background-color: #333;
             overflow: hidden;
-            transition: background-color 0.5s;
+            background-color: #333;
+            user-select: none;
+            font-family: Arial, sans-serif;
         }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
         #gameCanvas {
-            border: 2px solid #fff;
-            display: none;
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: #222;
         }
-        #mainMenu, #settingsMenu, #gameOverMenu, #pauseMenu {
+        
+        /* UI Elements */
+        #scoreDisplay, #highScoreDisplay, #healthBar, #superpowerDisplay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
             color: white;
-            font-family: Arial, sans-serif;
+            text-shadow: 1px 1px 2px black;
+            pointer-events: none;
+            z-index: 10;
         }
-        #mainMenu button, #settingsMenu button, #gameOverMenu button, #pauseMenu button, #pauseBtn, #joystickToggleBtn {
-            padding: 10px 20px;
-            font-size: 18px;
-            margin: 10px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        #mainMenu button:hover, #settingsMenu button:hover, #gameOverMenu button:hover, #pauseMenu button:hover, #pauseBtn:hover, #joystickToggleBtn:hover {
-            background-color: #45a049;
-        }
-        #settingsMenu, #gameOverMenu, #pauseMenu {
-            display: none;
-        }
-        #settingsMenu div {
-            margin: 20px 0;
-        }
-        .color-option {
-            width: 30px;
-            height: 30px;
-            display: inline-block;
-            margin: 5px;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        .color-option.selected {
-            border: 2px solid white;
-        }
+        
         #scoreDisplay {
-            position: absolute;
-            top: 40px;
-            left: 10px;
-            color: white;
-            font-size: 20px;
-            font-family: Arial, sans-serif;
+            top: 1vh;
+            left: 1vw;
+            font-size: 3vw;
         }
+        
         #highScoreDisplay {
-            position: absolute;
-            top: 40px;
-            right: 10px;
+            top: 1vh;
+            right: 1vw;
+            font-size: 3vw;
             color: yellow;
-            font-size: 20px;
-            font-family: Arial, sans-serif;
         }
+        
         #healthBar {
-            position: absolute;
-            top: 10px;
+            top: 5vh;
             left: 50%;
             transform: translateX(-50%);
-            width: 200px;
-            height: 20px;
-            background-color: grey;
+            width: 60%;
+            height: 2.5vh;
+            background-color: rgba(0, 0, 0, 0.5);
             border: 2px solid white;
-            display: none;
-            text-align: center;
-            line-height: 20px;
-            color: white;
-            font-size: 14px;
-            font-family: Arial, sans-serif;
+            border-radius: 5px;
+            overflow: hidden;
         }
+        
         #healthFill {
             height: 100%;
             background-color: green;
             width: 100%;
             transition: width 0.3s;
+        }
+        
+        #healthText {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 2.5vh;
+            font-size: 2vw;
+        }
+        
+        #superpowerDisplay {
+            bottom: 10vh;
+            right: 1vw;
+            font-size: 2.5vw;
+            color: cyan;
+        }
+        
+        /* Control Buttons */
+        #pauseBtn, #joystickToggleBtn {
+            position: absolute;
+            padding: 1vh 1.5vw;
+            font-size: 2.5vw;
+            background-color: rgba(76, 175, 80, 0.7);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            z-index: 10;
+            cursor: pointer;
+            touch-action: auto;
+        }
+        
+        #pauseBtn {
+            top: 1vh;
+            right: 1vw;
+        }
+        
+        #joystickToggleBtn {
+            top: 4vh;
+            right: 1vw;
+        }
+        
+        /* Menus */
+        .menu {
             position: absolute;
             top: 0;
             left: 0;
-            z-index: -1;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
         }
-        #pauseBtn {
-            position: absolute;
-            top: 70px;
-            right: 10px;
+        
+        .menu h1, .menu h2 {
+            color: white;
+            text-align: center;
+            margin-bottom: 2vh;
+            font-size: 5vw;
+        }
+        
+        .menu button {
+            padding: 1.5vh 3vw;
+            margin: 1vh;
+            font-size: 3vw;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            min-width: 30vw;
+            cursor: pointer;
+            touch-action: auto;
+        }
+        
+        #mainMenu {
+            display: flex;
+        }
+        
+        #settingsMenu, #gameOverMenu, #pauseMenu {
             display: none;
         }
-        #joystickToggleBtn {
-            position: absolute;
-            top: 70px;
-            left: 10px;
-            display: none;
+        
+        .settings-option {
+            margin: 2vh 0;
+            text-align: center;
+            color: white;
+            font-size: 3vw;
         }
-        #superpowerDisplay {
-            position: absolute;
-            top: 100px;
-            right: 10px;
-            color: cyan;
-            font-size: 18px;
-            font-family: Arial, sans-serif;
-            display: none;
+        
+        .color-option {
+            width: 5vw;
+            height: 5vw;
+            display: inline-block;
+            margin: 0.5vw;
+            border: 2px solid transparent;
+            border-radius: 50%;
         }
-        /* Joystick and Fire Button Styles */
-        #joystickContainer, #fireButton {
+        
+        .color-option.selected {
+            border-color: white;
+        }
+        
+        /* Touch Controls */
+        #controls {
             position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 25vh;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        #joystickArea {
+            width: 40%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            touch-action: none;
+        }
+        
+        #joystickBase {
+            width: 15vw;
+            height: 15vw;
             background-color: rgba(255, 255, 255, 0.2);
             border-radius: 50%;
-            display: none;
-            user-select: none;
+            position: relative;
         }
-        #joystickContainer {
-            width: 200px;
-            height: 200px;
-            bottom: 150px;
-            left: 80px;
-        }
-        #fireButton {
-            width: 150px;
-            height: 150px;
-            top: calc(60% + 50px);
-            right: 20px;
-            background-color: rgba(255, 0, 0, 0.5);
-        }
+        
         #joystick {
-            width: 100px;
-            height: 100px;
-            background-color: white;
+            width: 7.5vw;
+            height: 7.5vw;
+            background-color: rgba(255, 255, 255, 0.7);
             border-radius: 50%;
             position: absolute;
-            top: 50px;
-            left: 50px;
-            transition: all 0.1s;
+            top: 3.75vw;
+            left: 3.75vw;
+        }
+        
+        #fireButtonArea {
+            width: 40%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            touch-action: none;
+        }
+        
+        #fireButton {
+            width: 12vw;
+            height: 12vw;
+            background-color: rgba(255, 0, 0, 0.5);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 2.5vw;
+            text-align: center;
+        }
+        
+        /* Media Queries for Mobile */
+        @media (max-width: 768px) {
+            #scoreDisplay, #highScoreDisplay, #superpowerDisplay {
+                font-size: 4vw;
+            }
+            
+            #healthBar {
+                height: 3vh;
+            }
+            
+            #healthText {
+                font-size: 3vw;
+                line-height: 3vh;
+            }
+            
+            #pauseBtn, #joystickToggleBtn {
+                font-size: 3.5vw;
+                padding: 1vh 2vw;
+            }
+            
+            .menu h1, .menu h2 {
+                font-size: 8vw;
+            }
+            
+            .menu button {
+                font-size: 5vw;
+                padding: 2vh 5vw;
+                min-width: 50vw;
+            }
+            
+            .settings-option {
+                font-size: 5vw;
+            }
+            
+            .color-option {
+                width: 8vw;
+                height: 8vw;
+            }
+            
+            #joystickBase {
+                width: 20vw;
+                height: 20vw;
+            }
+            
+            #joystick {
+                width: 10vw;
+                height: 10vw;
+                top: 5vw;
+                left: 5vw;
+            }
+            
+            #fireButton {
+                width: 15vw;
+                height: 15vw;
+                font-size: 4vw;
+            }
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="scoreDisplay">Score: 0</div>
-    <div id="highScoreDisplay">High Score: 0</div>
-    <div id="healthBar"><div id="healthFill"></div>100% Health</div>
-    <button id="pauseBtn">Pause</button>
-    <button id="joystickToggleBtn">Joystick: ON</button>
-    <div id="superpowerDisplay"></div>
-
-    <!-- Main Menu -->
-    <div id="mainMenu">
-        <h1>Zombie Shooter</h1>
-        <button id="startBtn">Start</button>
-        <button id="settingsBtn">Settings</button>
-    </div>
-
-    <!-- Settings Menu -->
-    <div id="settingsMenu">
-        <h2>Settings</h2>
-        <div>
-            <label>Sound Volume:</label><br>
-            <button id="soundDown">-</button>
-            <span id="soundVolume">50</span>
-            <button id="soundUp">+</button>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Game UI -->
+        <div id="scoreDisplay">Score: 0</div>
+        <div id="highScoreDisplay">High Score: 0</div>
+        <div id="healthBar">
+            <div id="healthFill"></div>
+            <div id="healthText">100% Health</div>
         </div>
-        <div>
-            <label>Music Volume:</label><br>
-            <button id="musicDown">-</button>
-            <span id="musicVolume">50</span>
-            <button id="musicUp">+</button>
-        </div>
-        <div>
-            <label>Character Color:</label><br>
-            <div id="colorOptions">
-                <div class="color-option" data-color="red" style="background-color: red;"></div>
-                <div class="color-option" data-color="blue" style="background-color: blue;"></div>
-                <div class="color-option" data-color="green" style="background-color: green;"></div>
-                <div class="color-option" data-color="yellow" style="background-color: yellow;"></div>
+        <div id="superpowerDisplay"></div>
+        <button id="pauseBtn">Pause</button>
+        <button id="joystickToggleBtn">Joystick: ON</button>
+        
+        <!-- Touch Controls -->
+        <div id="controls">
+            <div id="joystickArea">
+                <div id="joystickBase">
+                    <div id="joystick"></div>
+                </div>
+            </div>
+            <div id="fireButtonArea">
+                <div id="fireButton">FIRE</div>
             </div>
         </div>
-        <button id="backBtn">Back</button>
+        
+        <!-- Menus -->
+        <div id="mainMenu" class="menu">
+            <h1>Zombie Shooter</h1>
+            <button id="startBtn">Start Game</button>
+            <button id="settingsBtn">Settings</button>
+        </div>
+        
+        <div id="settingsMenu" class="menu">
+            <h2>Settings</h2>
+            <div class="settings-option">
+                <div>Sound Volume:</div>
+                <button id="soundDown">-</button>
+                <span id="soundVolume">50</span>
+                <button id="soundUp">+</button>
+            </div>
+            <div class="settings-option">
+                <div>Music Volume:</div>
+                <button id="musicDown">-</button>
+                <span id="musicVolume">50</span>
+                <button id="musicUp">+</button>
+            </div>
+            <div class="settings-option">
+                <div>Character Color:</div>
+                <div>
+                    <div class="color-option selected" data-color="red" style="background-color: red;"></div>
+                    <div class="color-option" data-color="blue" style="background-color: blue;"></div>
+                    <div class="color-option" data-color="green" style="background-color: green;"></div>
+                    <div class="color-option" data-color="yellow" style="background-color: yellow;"></div>
+                </div>
+            </div>
+            <button id="backBtn">Back</button>
+        </div>
+        
+        <div id="gameOverMenu" class="menu">
+            <h2>Game Over!</h2>
+            <p id="finalScore">Final Score: 0</p>
+            <button id="playAgainBtn">Play Again</button>
+            <button id="mainMenuBtn">Main Menu</button>
+        </div>
+        
+        <div id="pauseMenu" class="menu">
+            <h2>Paused</h2>
+            <button id="resumeBtn">Resume</button>
+            <button id="mainMenuFromPauseBtn">Main Menu</button>
+        </div>
     </div>
-
-    <!-- Game Over Menu -->
-    <div id="gameOverMenu">
-        <h2>Game Over!</h2>
-        <p id="finalScore">Final Score: 0</p>
-        <button id="playAgainBtn">Play Again</button>
-        <button id="mainMenuBtn">Main Menu</button>
-    </div>
-
-    <!-- Pause Menu -->
-    <div id="pauseMenu">
-        <h2>Paused</h2>
-        <button id="resumeBtn">Resume</button>
-        <button id="mainMenuFromPauseBtn">Main Menu</button>
-    </div>
-
-    <!-- Joystick and Fire Button -->
-    <div id="joystickContainer">
-        <div id="joystick"></div>
-    </div>
-    <div id="fireButton"></div>
 
     <audio id="backgroundMusic" loop>
         <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
@@ -225,12 +377,41 @@
     </audio>
 
     <script>
+        // Game setup
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        
+        // Detect touch device
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        // Set canvas size with high-DPI support
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = `${window.innerWidth}px`;
+            canvas.style.height = `${window.innerHeight}px`;
+            ctx.scale(dpr, dpr);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Game elements
+        const gameContainer = document.getElementById('gameContainer');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const healthBar = document.getElementById('healthBar');
+        const healthFill = document.getElementById('healthFill');
+        const healthText = document.getElementById('healthText');
+        const superpowerDisplay = document.getElementById('superpowerDisplay');
+        
+        // Menu elements
         const mainMenu = document.getElementById('mainMenu');
         const settingsMenu = document.getElementById('settingsMenu');
         const gameOverMenu = document.getElementById('gameOverMenu');
         const pauseMenu = document.getElementById('pauseMenu');
+        
+        // Buttons
         const startBtn = document.getElementById('startBtn');
         const settingsBtn = document.getElementById('settingsBtn');
         const backBtn = document.getElementById('backBtn');
@@ -240,6 +421,8 @@
         const joystickToggleBtn = document.getElementById('joystickToggleBtn');
         const resumeBtn = document.getElementById('resumeBtn');
         const mainMenuFromPauseBtn = document.getElementById('mainMenuFromPauseBtn');
+        
+        // Settings controls
         const soundUp = document.getElementById('soundUp');
         const soundDown = document.getElementById('soundDown');
         const musicUp = document.getElementById('musicUp');
@@ -247,22 +430,28 @@
         const soundVolumeDisplay = document.getElementById('soundVolume');
         const musicVolumeDisplay = document.getElementById('musicVolume');
         const colorOptions = document.querySelectorAll('.color-option');
+        
+        // Audio
         const music = document.getElementById('backgroundMusic');
         const shootSound = document.getElementById('shootSound');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const highScoreDisplay = document.getElementById('highScoreDisplay');
-        const healthBar = document.getElementById('healthBar');
-        const healthFill = document.getElementById('healthFill');
-        const finalScore = document.getElementById('finalScore');
-        const joystickContainer = document.getElementById('joystickContainer');
+        
+        // Touch controls
+        const joystickBase = document.getElementById('joystickBase');
         const joystick = document.getElementById('joystick');
         const fireButton = document.getElementById('fireButton');
-        const superpowerDisplay = document.getElementById('superpowerDisplay');
-
+        const controls = document.getElementById('controls');
+        
+        // Hide touch controls on non-touch devices
+        if (!isTouchDevice) {
+            controls.style.display = 'none';
+            joystickToggleBtn.style.display = 'none';
+        }
+        
+        // Game state
         let player = {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            size: 20,
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2,
+            size: Math.min(window.innerWidth, window.innerHeight) * 0.04,
             speed: 5,
             color: 'red',
             angle: 0,
@@ -272,283 +461,316 @@
             multiGun: false,
             activePower: null
         };
+        
         let bullets = [];
         let zombies = [];
         let powerUps = [];
         let keys = {};
         let gameActive = false;
-        let mouseX = 0, mouseY = 0;
         let score = 0;
         let highScore = 0;
         let baseZombieSpeed = 1;
         let lastKillCount = 0;
-
-        // Joystick Variables
+        
+        // Touch control variables
         let joystickActive = false;
-        let joystickEnabled = true;
-        let joystickX = 100;
-        let joystickY = 100;
-        let joystickDeltaX = 0, joystickDeltaY = 0;
-        let usingMouse = false;
-
-        // Audio Setup
+        let joystickEnabled = isTouchDevice;
+        let joystickX = 0;
+        let joystickY = 0;
+        let joystickStartX = 0;
+        let joystickStartY = 0;
+        let joystickRadius = Math.min(window.innerWidth, window.innerHeight) * 0.075;
+        let fireButtonPressed = false;
+        
+        // Initialize audio volumes
         music.volume = 0.5;
         shootSound.volume = 0.5;
-        musicVolumeDisplay.textContent = Math.round(music.volume * 100);
         soundVolumeDisplay.textContent = Math.round(shootSound.volume * 100);
-
-        // Event Listeners for Menu and Settings
-        startBtn.addEventListener('click', startGame);
-        settingsBtn.addEventListener('click', () => {
+        musicVolumeDisplay.textContent = Math.round(music.volume * 100);
+        
+        // Helper function to add click and touch events
+        function addButtonEvents(button, callback) {
+            button.addEventListener('click', callback);
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                callback();
+            });
+        }
+        
+        // Event listeners for menu navigation
+        addButtonEvents(startBtn, startGame);
+        addButtonEvents(settingsBtn, () => {
             mainMenu.style.display = 'none';
-            settingsMenu.style.display = 'block';
+            settingsMenu.style.display = 'flex';
         });
-        backBtn.addEventListener('click', () => {
+        addButtonEvents(backBtn, () => {
             settingsMenu.style.display = 'none';
-            mainMenu.style.display = 'block';
+            mainMenu.style.display = 'flex';
         });
-        playAgainBtn.addEventListener('click', startGame);
-        mainMenuBtn.addEventListener('click', () => {
+        addButtonEvents(playAgainBtn, startGame);
+        addButtonEvents(mainMenuBtn, () => {
             gameOverMenu.style.display = 'none';
-            mainMenu.style.display = 'block';
+            mainMenu.style.display = 'flex';
         });
-
-        soundUp.addEventListener('click', () => {
-            if (shootSound.volume < 1) shootSound.volume += 0.1;
+        
+        // Settings controls
+        addButtonEvents(soundUp, () => {
+            if (shootSound.volume < 1) shootSound.volume = Math.min(1, shootSound.volume + 0.1);
             soundVolumeDisplay.textContent = Math.round(shootSound.volume * 100);
         });
-        soundDown.addEventListener('click', () => {
-            if (shootSound.volume > 0) shootSound.volume -= 0.1;
+        addButtonEvents(soundDown, () => {
+            if (shootSound.volume > 0) shootSound.volume = Math.max(0, shootSound.volume - 0.1);
             soundVolumeDisplay.textContent = Math.round(shootSound.volume * 100);
         });
-        musicUp.addEventListener('click', () => {
-            if (music.volume < 1) music.volume += 0.1;
+        addButtonEvents(musicUp, () => {
+            if (music.volume < 1) music.volume = Math.min(1, music.volume + 0.1);
             musicVolumeDisplay.textContent = Math.round(music.volume * 100);
         });
-        musicDown.addEventListener('click', () => {
-            if (music.volume > 0) music.volume -= 0.1;
+        addButtonEvents(musicDown, () => {
+            if (music.volume > 0) music.volume = Math.max(0, music.volume - 0.1);
             musicVolumeDisplay.textContent = Math.round(music.volume * 100);
         });
-
+        
         colorOptions.forEach(option => {
-            option.addEventListener('click', () => {
+            addButtonEvents(option, () => {
                 colorOptions.forEach(opt => opt.classList.remove('selected'));
                 option.classList.add('selected');
                 player.color = option.getAttribute('data-color');
             });
         });
-        colorOptions[0].classList.add('selected'); // Default red
-
-        // Pause, Fire, and Joystick Toggle Event Listeners
-        pauseBtn.addEventListener('click', pauseGame);
-        fireButton.addEventListener('mousedown', shoot);
-        fireButton.addEventListener('touchstart', shoot);
-        joystickToggleBtn.addEventListener('click', toggleJoystick);
-        resumeBtn.addEventListener('click', resumeGame);
-        mainMenuFromPauseBtn.addEventListener('click', () => {
+        
+        // Game controls
+        addButtonEvents(pauseBtn, pauseGame);
+        addButtonEvents(resumeBtn, resumeGame);
+        addButtonEvents(mainMenuFromPauseBtn, () => {
             pauseMenu.style.display = 'none';
-            mainMenu.style.display = 'block';
+            mainMenu.style.display = 'flex';
             gameActive = false;
             music.pause();
-            hideGameElements();
         });
-
-        // Keyboard Event Listeners
+        
+        addButtonEvents(joystickToggleBtn, toggleJoystick);
+        
+        // Keyboard controls
         document.addEventListener('keydown', (e) => {
             keys[e.key.toLowerCase()] = true;
-            if (e.key === ' ' && gameActive) shoot(); // Space bar to shoot
-            if (e.key === 'p' && gameActive) pauseGame(); // 'P' key to pause
-        });
-        document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
-
-        // Joystick Event Listeners
-        joystickContainer.addEventListener('mousedown', startJoystick);
-        joystickContainer.addEventListener('touchstart', startJoystick);
-        document.addEventListener('mousemove', moveJoystick);
-        document.addEventListener('touchmove', moveJoystick);
-        document.addEventListener('mouseup', stopJoystick);
-        document.addEventListener('touchend', stopJoystick);
-
-        canvas.addEventListener('mousemove', (e) => {
-            if (gameActive) {
-                const rect = canvas.getBoundingClientRect();
-                mouseX = e.clientX - rect.left;
-                mouseY = e.clientY - rect.top;
-                usingMouse = true;
+            if (e.key === ' ' && gameActive) {
+                e.preventDefault();
+                shoot();
             }
+            if (e.key === 'p' && gameActive) pauseGame();
         });
-        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
-        function startJoystick(e) {
-            if (gameActive && joystickEnabled) {
-                joystickActive = true;
-                usingMouse = false;
-                moveJoystick(e);
-            }
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+        
+        // Touch controls for joystick
+        if (isTouchDevice) {
+            joystickBase.addEventListener('touchstart', handleJoystickStart, { passive: false });
+            joystickBase.addEventListener('touchmove', handleJoystickMove, { passive: false });
+            joystickBase.addEventListener('touchend', handleJoystickEnd, { passive: false });
+            
+            // Touch controls for fire button
+            fireButton.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                fireButtonPressed = true;
+                if (gameActive) shoot();
+            });
+            
+            fireButton.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                fireButtonPressed = false;
+            });
         }
-
-        function moveJoystick(e) {
-            if (!joystickActive || !gameActive || !joystickEnabled) return;
+        
+        // Handle joystick movement
+        function handleJoystickStart(e) {
+            if (!gameActive || !joystickEnabled) return;
+            
             e.preventDefault();
-            const rect = joystickContainer.getBoundingClientRect();
-            let clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            let clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            let x = clientX - rect.left - 100;
-            let y = clientY - rect.top - 100;
-            let distance = Math.sqrt(x * x + y * y);
-            let maxDistance = 50;
-
-            if (distance > maxDistance) {
-                x = (x / distance) * maxDistance;
-                y = (y / distance) * maxDistance;
+            joystickActive = true;
+            
+            const rect = joystickBase.getBoundingClientRect();
+            joystickStartX = rect.left + rect.width / 2;
+            joystickStartY = rect.top + rect.height / 2;
+            
+            handleJoystickMove(e);
+        }
+        
+        function handleJoystickMove(e) {
+            if (!joystickActive || !gameActive || !joystickEnabled) return;
+            
+            e.preventDefault();
+            
+            let clientX = e.touches[0].clientX;
+            let clientY = e.touches[0].clientY;
+            
+            joystickX = clientX - joystickStartX;
+            joystickY = clientY - joystickStartY;
+            
+            const distance = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
+            if (distance > joystickRadius) {
+                joystickX = (joystickX / distance) * joystickRadius;
+                joystickY = (joystickY / distance) * joystickRadius;
             }
-
-            joystick.style.left = `${100 + x}px`;
-            joystick.style.top = `${100 + y}px`;
-            joystickDeltaX = x / maxDistance;
-            joystickDeltaY = y / maxDistance;
+            
+            joystick.style.transform = `translate(${joystickX}px, ${joystickY}px)`;
+            
+            player.angle = Math.atan2(joystickY, joystickX);
         }
-
-        function stopJoystick() {
+        
+        function handleJoystickEnd(e) {
+            if (!joystickActive) return;
+            
+            e.preventDefault();
             joystickActive = false;
-            joystick.style.left = '50px';
-            joystick.style.top = '50px';
-            joystickDeltaX = 0;
-            joystickDeltaY = 0;
+            joystickX = 0;
+            joystickY = 0;
+            joystick.style.transform = 'translate(0, 0)';
         }
-
+        
         function toggleJoystick() {
             joystickEnabled = !joystickEnabled;
-            joystickContainer.style.display = joystickEnabled ? 'block' : 'none';
             joystickToggleBtn.textContent = `Joystick: ${joystickEnabled ? 'ON' : 'OFF'}`;
-            if (!joystickEnabled) {
-                joystickActive = false;
-                joystickDeltaX = 0;
-                joystickDeltaY = 0;
+        }
+        
+        function shoot() {
+            if (!gameActive) return;
+            
+            shootSound.currentTime = 0;
+            shootSound.play();
+            
+            if (player.multiGun) {
+                bullets.push({ x: player.x, y: player.y, speed: 10, angle: player.angle - 0.2, size: 8 });
+                bullets.push({ x: player.x, y: player.y, speed: 10, angle: player.angle, size: 8 });
+                bullets.push({ x: player.x, y: player.y, speed: 10, angle: player.angle + 0.2, size: 8 });
+            } else {
+                bullets.push({ x: player.x, y: player.y, speed: 10, angle: player.angle, size: 12 });
             }
         }
-
-        function shoot(e) {
-            if (gameActive) {
-                if (e) e.preventDefault();
-                shootSound.currentTime = 0;
-                shootSound.play();
-                if (player.multiGun) {
-                    bullets.push({ x: player.x, y: player.y, speed: 10, angle: player.angle - 0.2 });
-                    bullets.push({ x: player.x, y: player.y, speed: 10, angle: player.angle });
-                    bullets.push({ x: player.x, y: player.y, speed: 10, angle: player.angle + 0.2 });
-                } else {
-                    bullets.push({ x: player.x, y: player.y, speed: 10, angle: player.angle });
-                }
-            }
-        }
-
+        
         function startGame() {
             mainMenu.style.display = 'none';
             gameOverMenu.style.display = 'none';
             pauseMenu.style.display = 'none';
-            canvas.style.display = 'block';
+            
+            resetGame();
+            
             scoreDisplay.style.display = 'block';
             highScoreDisplay.style.display = 'block';
             healthBar.style.display = 'block';
-            joystickContainer.style.display = joystickEnabled ? 'block' : 'none';
-            fireButton.style.display = 'block';
-            pauseBtn.style.display = 'block';
-            joystickToggleBtn.style.display = 'block';
             superpowerDisplay.style.display = 'block';
+            pauseBtn.style.display = 'block';
+            if (isTouchDevice) joystickToggleBtn.style.display = 'block';
+            
             gameActive = true;
-            music.play();
-            resetGame();
+            music.play().catch(() => {
+                // Handle autoplay restrictions
+                console.log('Audio playback requires user interaction');
+            });
             gameLoop();
         }
-
+        
         function pauseGame() {
             if (gameActive) {
                 gameActive = false;
                 music.pause();
-                pauseMenu.style.display = 'block';
-                pauseBtn.style.display = 'none';
+                pauseMenu.style.display = 'flex';
             }
         }
-
+        
         function resumeGame() {
             if (!gameActive) {
                 gameActive = true;
                 music.play();
                 pauseMenu.style.display = 'none';
-                pauseBtn.style.display = 'block';
                 gameLoop();
             }
         }
-
-        function hideGameElements() {
-            canvas.style.display = 'none';
-            scoreDisplay.style.display = 'none';
-            highScoreDisplay.style.display = 'none';
-            healthBar.style.display = 'none';
-            joystickContainer.style.display = 'none';
-            fireButton.style.display = 'none';
-            pauseBtn.style.display = 'none';
-            joystickToggleBtn.style.display = 'none';
-            superpowerDisplay.style.display = 'none';
-        }
-
+        
         function movePlayer() {
-            let dx = joystickEnabled ? joystickDeltaX * player.speed : 0;
-            let dy = joystickEnabled ? joystickDeltaY * player.speed : 0;
-
-            if (keys['w'] && player.y - player.size > 0) dy -= player.speed;
-            if (keys['s'] && player.y + player.size < canvas.height) dy += player.speed;
-            if (keys['a'] && player.x - player.size > 0) dx -= player.speed;
-            if (keys['d'] && player.x + player.size < canvas.width) dx += player.speed;
-
-            let totalSpeed = Math.sqrt(dx * dx + dy * dy);
+            let dx = 0, dy = 0;
+            
+            if (isTouchDevice && joystickActive && joystickEnabled) {
+                const speedFactor = player.speed / joystickRadius;
+                dx = joystickX * speedFactor;
+                dy = joystickY * speedFactor;
+            } else {
+                // Keyboard movement
+                if (keys['w']) dy -= player.speed;
+                if (keys['s']) dy += player.speed;
+                if (keys['a']) dx -= player.speed;
+                if (keys['d']) dx += player.speed;
+                
+                // Keyboard rotation
+                if (keys['arrowleft']) player.angle -= 0.05;
+                if (keys['arrowright']) player.angle += 0.05;
+                if (keys['arrowup']) player.angle = -Math.PI / 2;
+                if (keys['arrowdown']) player.angle = Math.PI / 2;
+            }
+            
+            const totalSpeed = Math.sqrt(dx * dx + dy * dy);
             if (totalSpeed > player.speed) {
                 dx = (dx / totalSpeed) * player.speed;
                 dy = (dy / totalSpeed) * player.speed;
             }
-
-            if (player.x + dx - player.size > 0 && player.x + dx + player.size < canvas.width) {
-                player.x += dx;
-            }
-            if (player.y + dy - player.size > 0 && player.y + dy + player.size < canvas.height) {
-                player.y += dy;
-            }
-
-            if (usingMouse) {
-                player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
-            } else if (joystickEnabled && joystickActive && (joystickDeltaX !== 0 || joystickDeltaY !== 0)) {
-                player.angle = Math.atan2(joystickDeltaY, joystickDeltaX);
-            }
+            
+            player.x = Math.max(player.size, Math.min(window.innerWidth - player.size, player.x + dx));
+            player.y = Math.max(player.size, Math.min(window.innerHeight - player.size, player.y + dy));
         }
-
+        
         function spawnZombie() {
-            const side = Math.floor(Math.random() * 3);
-            let x, y, speed, angle;
-            const speedMultiplier = Math.floor(score / 10) + 1;
-            speed = baseZombieSpeed * speedMultiplier;
-            if (side === 0) { x = Math.random() * canvas.width; y = -30; }
-            else if (side === 1) { x = Math.random() * canvas.width; y = canvas.height + 30; }
-            else { x = -30; y = Math.random() * canvas.height; }
-            angle = Math.atan2(player.y - y, player.x - x);
-            zombies.push({ x, y, speed, bodySize: 20, headSize: 10, angle });
+            const side = Math.floor(Math.random() * 4);
+            let x, y;
+            const speedMultiplier = Math.min(3, Math.floor(score / 10) * 0.2 + 1);
+            const speed = baseZombieSpeed * speedMultiplier;
+            const size = Math.min(window.innerWidth, window.innerHeight) * 0.04;
+            
+            if (side === 0) {
+                x = Math.random() * window.innerWidth;
+                y = -size;
+            } else if (side === 1) {
+                x = window.innerWidth + size;
+                y = Math.random() * window.innerHeight;
+            } else if (side === 2) {
+                x = Math.random() * window.innerWidth;
+                y = window.innerHeight + size;
+            } else {
+                x = -size;
+                y = Math.random() * window.innerHeight;
+            }
+            
+            zombies.push({
+                x, y,
+                speed,
+                bodySize: size,
+                headSize: size * 0.5,
+                angle: Math.atan2(player.y - y, player.x - x)
+            });
         }
-
+        
         function spawnPowerUp() {
-            const x = Math.random() * (canvas.width - 40) + 20;
-            const y = Math.random() * (canvas.height - 40) + 20;
+            const size = Math.min(window.innerWidth, window.innerHeight) * 0.06;
+            const x = Math.random() * (window.innerWidth - size * 2) + size;
+            const y = Math.random() * (window.innerHeight - size * 2) + size;
             const types = ['shield', 'multiGun', 'health'];
             const type = types[Math.floor(Math.random() * types.length)];
-            powerUps.push({ x, y, type, size: 40, timer: 5 * 60 });
+            
+            powerUps.push({
+                x, y,
+                type,
+                size,
+                timer: 5 * 60
+            });
         }
-
+        
         function changeBackgroundColor() {
-            const r = Math.floor(Math.random() * 256);
-            const g = Math.floor(Math.random() * 256);
-            const b = Math.floor(Math.random() * 256);
+            const r = Math.floor(Math.random() * 56) + 50;
+            const g = Math.floor(Math.random() * 56) + 50;
+            const b = Math.floor(Math.random() * 56) + 50;
             document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
         }
-
+        
         function updateSuperpowerDisplay() {
             if (player.activePower) {
                 const timeLeft = Math.ceil(player.activePower.timer / 60);
@@ -557,32 +779,37 @@
                 superpowerDisplay.textContent = '';
             }
         }
-
+        
         function updateGame() {
             movePlayer();
-
+            
             bullets.forEach((bullet, index) => {
                 bullet.x += bullet.speed * Math.cos(bullet.angle);
                 bullet.y += bullet.speed * Math.sin(bullet.angle);
-                if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
+                
+                if (bullet.x < 0 || bullet.x > window.innerWidth || bullet.y < 0 || bullet.y > window.innerHeight) {
                     bullets.splice(index, 1);
                 }
             });
-
+            
             zombies.forEach((zombie, zIndex) => {
                 zombie.x += zombie.speed * Math.cos(zombie.angle);
                 zombie.y += zombie.speed * Math.sin(zombie.angle);
-
+                
+                zombie.angle = Math.atan2(player.y - zombie.y, player.x - zombie.x);
+                
                 bullets.forEach((bullet, bIndex) => {
-                    if (Math.hypot(bullet.x - zombie.x, bullet.y - zombie.y) < zombie.bodySize) {
+                    if (Math.hypot(bullet.x - zombie.x, bullet.y - zombie.y) < zombie.bodySize + bullet.size) {
                         zombies.splice(zIndex, 1);
                         bullets.splice(bIndex, 1);
                         score += 1;
                         scoreDisplay.textContent = `Score: ${score}`;
+                        
                         if (score > highScore) {
                             highScore = score;
                             highScoreDisplay.textContent = `High Score: ${highScore}`;
                         }
+                        
                         if (score % 10 === 0 && score > lastKillCount) {
                             changeBackgroundColor();
                             spawnPowerUp();
@@ -590,99 +817,127 @@
                         }
                     }
                 });
-
+                
                 if (Math.hypot(player.x - zombie.x, player.y - zombie.y) < player.size + zombie.bodySize) {
                     if (!player.shield) {
                         player.health -= 1.5;
                         healthFill.style.width = `${(player.health / player.maxHealth) * 100}%`;
-                        healthBar.textContent = `${Math.round(player.health)}% Health`;
+                        healthText.textContent = `${Math.round(player.health)}% Health`;
+                        
                         if (player.health <= 0) {
                             gameActive = false;
                             finalScore.textContent = `Final Score: ${score}`;
-                            hideGameElements();
-                            gameOverMenu.style.display = 'block';
+                            gameOverMenu.style.display = 'flex';
                             music.pause();
                         }
                     }
                 }
             });
-
+            
             powerUps.forEach((power, index) => {
                 power.timer--;
+                
                 if (power.timer <= 0) {
                     if (power === player.activePower) {
-                        if (power.type === 'shield') player.shield = false;
-                        if (power.type === 'multiGun') player.multiGun = false;
-                        player.activePower = null;
+                        deactivatePowerUp(power);
                     }
                     powerUps.splice(index, 1);
                 } else if (Math.hypot(player.x - power.x, player.y - power.y) < player.size + power.size / 2) {
                     if (player.activePower) {
-                        if (player.activePower.type === 'shield') player.shield = false;
-                        if (player.activePower.type === 'multiGun') player.multiGun = false;
+                        deactivatePowerUp(player.activePower);
                     }
+                    
                     player.activePower = power;
-                    if (power.type === 'shield') player.shield = true;
-                    if (power.type === 'multiGun') player.multiGun = true;
-                    if (power.type === 'health') {
-                        player.health = player.maxHealth;
+                    
+                    if (power.type === 'shield') {
+                        player.shield = true;
+                    } else if (power.type === 'multiGun') {
+                        player.multiGun = true;
+                    } else if (power.type === 'health') {
+                        player.health = Math.min(player.maxHealth, player.health + 30);
                         healthFill.style.width = `${(player.health / player.maxHealth) * 100}%`;
-                        healthBar.textContent = `${Math.round(player.health)}% Health`;
+                        healthText.textContent = `${Math.round(player.health)}% Health`;
                         player.activePower = null;
                     }
-                    if (power.type !== 'health') powerUps.splice(index, 1);
+                    
+                    if (power.type !== 'health') {
+                        powerUps.splice(index, 1);
+                    }
                 }
             });
-
+            
             if (Math.random() < 0.03) spawnZombie();
+            
             updateSuperpowerDisplay();
         }
-
+        
+        function deactivatePowerUp(power) {
+            if (power.type === 'shield') player.shield = false;
+            if (power.type === 'multiGun') player.multiGun = false;
+            player.activePower = null;
+        }
+        
         function drawGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            
             ctx.save();
             ctx.translate(player.x, player.y);
             ctx.rotate(player.angle);
-            ctx.fillStyle = player.shield ? 'rgba(0, 191, 255, 0.5)' : player.color;
+            
+            if (player.shield) {
+                ctx.beginPath();
+                ctx.arc(0, 0, player.size * 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 191, 255, 0.3)';
+                ctx.fill();
+            }
+            
+            ctx.fillStyle = player.color;
             ctx.beginPath();
-            ctx.arc(0, -player.size / 2, player.size / 2, 0, 2 * Math.PI);
+            ctx.arc(0, -player.size / 2, player.size / 2, 0, Math.PI * 2);
             ctx.fill();
+            
             ctx.fillRect(-player.size * 0.75, -player.size / 4, player.size / 4, player.size * 0.75);
             ctx.fillRect(player.size / 2, -player.size / 4, player.size / 4, player.size * 0.75);
             ctx.fillRect(-player.size / 4, 0, player.size / 4, player.size * 0.75);
             ctx.fillRect(0, 0, player.size / 4, player.size * 0.75);
+            
             ctx.fillStyle = 'black';
-            ctx.fillRect(player.size / 2, -4, 20, 8);
+            ctx.fillRect(player.size / 2, -4, player.size * 1.5, 8);
+            
             ctx.restore();
-
+            
             ctx.fillStyle = 'yellow';
             bullets.forEach(bullet => {
                 ctx.beginPath();
-                ctx.arc(bullet.x, bullet.y, 12, 0, 2 * Math.PI);
+                ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
                 ctx.fill();
             });
-
+            
             zombies.forEach(zombie => {
                 ctx.save();
                 ctx.translate(zombie.x, zombie.y);
                 ctx.rotate(zombie.angle + Math.PI / 2);
+                
                 ctx.fillStyle = '#2F4F2F';
                 ctx.fillRect(-zombie.bodySize / 2, -zombie.bodySize / 2, zombie.bodySize, zombie.bodySize);
+                
                 ctx.fillStyle = '#3CB371';
                 ctx.beginPath();
-                ctx.arc(0, -zombie.bodySize / 2 - zombie.headSize / 2, zombie.headSize, 0, 2 * Math.PI);
+                ctx.arc(0, -zombie.bodySize / 2 - zombie.headSize / 2, zombie.headSize, 0, Math.PI * 2);
                 ctx.fill();
+                
                 ctx.fillStyle = 'red';
                 ctx.beginPath();
-                ctx.arc(-zombie.headSize / 2, -zombie.bodySize / 2 - zombie.headSize / 2, 2, 0, 2 * Math.PI);
-                ctx.arc(zombie.headSize / 2, -zombie.bodySize / 2 - zombie.headSize / 2, 2, 0, 2 * Math.PI);
+                ctx.arc(-zombie.headSize / 3, -zombie.bodySize / 2 - zombie.headSize / 2, zombie.headSize / 5, 0, Math.PI * 2);
+                ctx.arc(zombie.headSize / 3, -zombie.bodySize / 2 - zombie.headSize / 2, zombie.headSize / 5, 0, Math.PI * 2);
                 ctx.fill();
+                
                 ctx.restore();
             });
-
+            
             powerUps.forEach(power => {
                 let gradient;
+                
                 if (power.type === 'shield') {
                     gradient = ctx.createRadialGradient(power.x, power.y, 5, power.x, power.y, power.size / 2);
                     gradient.addColorStop(0, 'cyan');
@@ -691,46 +946,68 @@
                     gradient = ctx.createRadialGradient(power.x, power.y, 5, power.x, power.y, power.size / 2);
                     gradient.addColorStop(0, 'yellow');
                     gradient.addColorStop(1, 'orange');
-                } else { // health
+                } else {
                     gradient = ctx.createRadialGradient(power.x, power.y, 5, power.x, power.y, power.size / 2);
                     gradient.addColorStop(0, 'lime');
                     gradient.addColorStop(1, 'green');
                 }
+                
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(power.x, power.y, power.size / 2, 0, 2 * Math.PI);
+                ctx.arc(power.x, power.y, power.size / 2, 0, Math.PI * 2);
                 ctx.fill();
+                
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = `${power.size * 0.6}px Arial`;
+                
+                if (power.type === 'shield') {
+                    ctx.fillText('🛡️', power.x, power.y);
+                } else if (power.type === 'multiGun') {
+                    ctx.fillText('🔫', power.x, power.y);
+                } else {
+                    ctx.fillText('❤️', power.x, power.y);
+                }
             });
         }
-
+        
         function resetGame() {
-            player.x = canvas.width / 2;
-            player.y = canvas.height / 2;
+            player.x = window.innerWidth / 2;
+            player.y = window.innerHeight / 2;
+            player.size = Math.min(window.innerWidth, window.innerHeight) * 0.04;
             player.health = 100;
             player.shield = false;
             player.multiGun = false;
             player.activePower = null;
+            player.angle = 0;
+            
             healthFill.style.width = '100%';
-            healthBar.textContent = '100% Health';
+            healthText.textContent = '100% Health';
+            
             bullets = [];
             zombies = [];
             powerUps = [];
             score = 0;
             lastKillCount = 0;
+            
             scoreDisplay.textContent = `Score: ${score}`;
             document.body.style.backgroundColor = '#333';
-            usingMouse = false;
-            superpowerDisplay.textContent = '';
-            joystickToggleBtn.textContent = `Joystick: ${joystickEnabled ? 'ON' : 'OFF'}`;
         }
-
-        function gameLoop() {
-            if (gameActive) {
-                updateGame();
-                drawGame();
-                requestAnimationFrame(gameLoop);
-            }
+        
+        let lastFrameTime = 0;
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+            
+            const deltaTime = (timestamp - lastFrameTime) / 16.67; // Normalize to 60fps
+            lastFrameTime = timestamp;
+            
+            updateGame();
+            drawGame();
+            requestAnimationFrame(gameLoop);
         }
+        
+        resetGame();
     </script>
 </body>
 </html>
